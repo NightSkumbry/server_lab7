@@ -12,6 +12,7 @@ import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
+import java.lang.Thread;
 import java.net.InetSocketAddress;
 import java.nio.ByteBuffer;
 import java.nio.channels.DatagramChannel;
@@ -73,7 +74,7 @@ public class ConnectionControl {
     private final List<InetSocketAddress> connectedUsers = new ArrayList<>(); // Список подключенных пользователей
     private Printer printer;
     private DataBaseControl dataBaseControl; // Экземпляр класса для управления авторизацией
-    private ForkJoinPool forkJoinPool = new ForkJoinPool(); // Пул потоков для асинхронной отправки данных
+    Thread.Builder.OfVirtual builder = Thread.ofVirtual();
 
     /**
      * Инициализирует сетевой канал для работы по протоколу UDP.
@@ -204,7 +205,7 @@ public class ConnectionControl {
             int clientId = response.getClientId();
             if (clientId >= 0 && clientId < connectedUsers.size()) {
                 InetSocketAddress clientAddress = connectedUsers.get(clientId);
-                forkJoinPool.submit(new Sender(response, clientAddress, channel, printer));                
+                builder.start(() -> new Sender(response, clientAddress, channel, printer).compute());                
             }
     }
 
